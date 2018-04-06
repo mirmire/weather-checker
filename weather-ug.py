@@ -9,20 +9,21 @@ def main():
     try:
         location = input("location: ")
         city, country = location.split()
-        u_location = "{country}/{city}".format(country=country, city=city)
-        g_location = "{city}+{country}".format(country=country, city=city)
+        city = city.strip()
+        country = country.strip()
+        underground(country, city)
+        google(country, city)
     except(ValueError):
-        u_location = g_location = location.strip()
-
-    underground(u_location)
-    google(g_location)
+        print("Use city country format like : oulu finland")
+        main()
 
 
-def underground(location):
+def underground(country, city):
     """"Make API call to the Weather Underground endpoint
         and extract weather data """
     # splitting up query parts makes it modular and short neat lines
     try:
+        location = "{country}/{city}".format(country=country, city=city)
         api_key = ""
         w_url = "http://api.wunderground.com/api/"
         geo_lookup = "/geolookup/conditions/q/"
@@ -31,19 +32,20 @@ def underground(location):
         data = clean_data(query_url)  # send the query and get back dictionary
         location = data['location']['city']
 
-        # temp_c can be changed to temp_f for a different unit
+        # temp_c can be changed to temp_f for different unit
         temp = data['current_observation']['temp_c']
         feels_like = data['current_observation']['feelslike_c']
         sky = data['current_observation']['weather']
-        print_summary("Wunderground", temp, feels_like, sky)
+        print_summary("WUNDERGROUND", temp, feels_like, sky)
     except(ValueError):
-        # just passing now, needs more testing
-        pass
+        print("Something went wrong. Try again!")
+        main()
 
 
-def google(location):
+def google(country, city):
     """Google is needed to find the longitude and latitude of given location"""
     try:
+        location = "{city}+{country}".format(country=country, city=city)
         g_url = "https://maps.googleapis.com/maps/api/geocode/json?address="
         api_key = ""
         query_string = g_url+location+"&key="+api_key
@@ -52,8 +54,8 @@ def google(location):
         latitude = data['results'][0]['geometry']['location']['lat']
         dark_sky(latitude, longitude)
     except(ValueError):
-        # just passing now, needs more testing
-        pass
+        print("Something went wrong. Try again!")
+        main()
 
 
 def dark_sky(lat, lng):
@@ -65,10 +67,11 @@ def dark_sky(lat, lng):
     temp = data['currently']['temperature']
     feels_like = data['currently']['apparentTemperature']
     sky = data['currently']['summary']
-    print_summary("Dark Sky", temp, feels_like, sky)
+    print_summary("DARK SKY", temp, feels_like, sky)
 
 
 def clean_data(query_url):
+    """Make function call with the passed query string and parse the output"""
     try:
         f = request.urlopen(query_url)
 
@@ -87,4 +90,6 @@ def print_summary(source, temp, feels_like, sky):
 
 
 if __name__ == "__main__":
+    print("Type the location to get weather information in "
+          "city country format.")
     main()
